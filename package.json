@@ -1,0 +1,25 @@
+{
+  "name": "ascii-invoice-parser",
+  "version": "1.0.0",
+  "description": "Parse files that have digits as ASCII art in them",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "email": "gurdotan@gmail.com",
+    "name": "Gur Dotan",
+    "url": "http://github.com/gurdotan/"
+  },
+  "homepage": "https://github.com/gurdotan/ascii-invoice-parser",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/gurdotan/ascii-invoice-parser.git"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "3.3.5",
+    "line-reader": "0.4.0",
+    "lodash": "4.11.1"
+  }
+}
