@@ -7,10 +7,21 @@ let _          = require('lodash'),
 
 let eachLine = Promise.promisify(lineReader.eachLine);
 let i                  = 1,
+    args               = process.argv.slice(2),
+    inputFilePath      = args[0],
+    outputFilePath     = args[1],
     invoiceNumbers     = [],
     createArrays       = (n) => _.times(n, () => []),
     invoiceAsciiDigits = createArrays(9);
 
+//
+// Define a collection of flattened ASCII art digits.
+// "Flattened" means that a the seven-block digit's characters
+// are concatenated from left to right, row by row.  For example, number 2:
+//  _
+//  _|
+// |_     ==    ' _  _||_ '
+//
 let digits = {
   ' _ | ||_|': '0',
   '     |  |': '1',
@@ -31,7 +42,7 @@ let identifyAsciiDigit = (digitString) => {
   // User Story 2: In case the digit string isn't recognized,
   // fallback to the '?' character.
   return digits[digitString] || '?';
-}
+};
 
 let processAsciiArtLine = (line) => {
 
@@ -41,7 +52,6 @@ let processAsciiArtLine = (line) => {
       let digitIndex = Math.floor(i / 3);
       invoiceAsciiDigits[digitIndex].push(char);
     });
-    console.log(line);
   } else {
     let invoiceNumber = _.reduce(invoiceAsciiDigits, (invoiceNumber, asciiDigit) => {
       let digit = identifyAsciiDigit(asciiDigit.join(''));
@@ -51,19 +61,20 @@ let processAsciiArtLine = (line) => {
     if (_.includes(invoiceNumber, '?')) invoiceNumber += ' ILLEGAL';
 
     invoiceNumbers.push(invoiceNumber);
-    console.log(invoiceNumber);
     invoiceAsciiDigits = createArrays(9);
   }
   i++;
 };
 
 let writeOutputFile = () => {
-  fs.writeFileSync('./files/output_user_story_1_gur.txt', invoiceNumbers.join('\n') + '\n');
+  fs.writeFileSync(outputFilePath, invoiceNumbers.join('\n') + '\n');
 };
 
-eachLine('./files/input_user_story_1.txt', processAsciiArtLine)
-  .then(writeOutputFile).catch((err) => {
-  console.error(err);
-});
+eachLine(inputFilePath, processAsciiArtLine)
+  .then(writeOutputFile)
+  .catch((err) => {
+    console.log('Error occurred!!!');
+    console.error(err);
+  });
 
 
