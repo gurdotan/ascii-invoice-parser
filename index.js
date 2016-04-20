@@ -3,73 +3,56 @@
 let _          = require('lodash'),
     fs         = require('fs'),
     Promise    = require('bluebird'),
-    lineReader = require('line-reader');
+    lineReader = require('line-reader'),
+    AsciiUtils = require('./ascii-utils');
 
 let eachLine = Promise.promisify(lineReader.eachLine);
-let i                  = 1,
-    args               = process.argv.slice(2),
-    inputFilePath      = args[0],
-    outputFilePath     = args[1],
-    invoiceNumbers     = [],
-    createArrays       = (n) => _.times(n, () => []),
-    invoiceAsciiDigits = createArrays(9);
+let i              = 1,
+    args           = process.argv.slice(2),
+    inputFilePath  = args[0],
+    outputFilePath = args[1],
+    invoiceNumbers = [],
+    createArrays   = (n) => _.times(n, () => []),
 
-//
-// Define a collection of flattened ASCII art digits.
-// "Flattened" means that a the seven-block digit's characters
-// are concatenated from left to right, row by row.  For example, number 2:
-//  _
-//  _|
-// |_     ==    ' _  _||_ '
-//
-let digits = {
-  ' _ | ||_|': '0',
-  '     |  |': '1',
-  ' _  _||_ ': '2',
-  ' _  _| _|': '3',
-  '   |_|  |': '4',
-  ' _ |_  _|': '5',
-  ' _ |_ |_|': '6',
-  ' _   |  |': '7',
-  ' _ |_||_|': '8',
-  ' _ |_| _|': '9'
-};
+    // Each ASCII digit will have its characters accumulated to
+    // the sub-array in the corresponding position.
+    asciiDigits    = createArrays(9);
 
-let identifyAsciiDigit = (digitString) => {
-
-  // Return the digit that this string maps to.
-  //
-  // User Story 2: In case the digit string isn't recognized,
-  // fallback to the '?' character.
-  return digits[digitString] || '?';
-};
 
 let processAsciiArtLine = (line) => {
 
-  // Ignore every 4th line
+  // On lines 1-3, 5-7, 9-11 etc. accumulate characters into their digit's sub-array
   if (i % 4 != 0) {
     _.each(line, (char, i) => {
       let digitIndex = Math.floor(i / 3);
-      invoiceAsciiDigits[digitIndex].push(char);
+      asciiDigits[digitIndex].push(char);
     });
   } else {
-    let invoiceNumber = _.reduce(invoiceAsciiDigits, (invoiceNumber, asciiDigit) => {
-      let digit = identifyAsciiDigit(asciiDigit.join(''));
-      return invoiceNumber + digit;
-    }, '');
 
-    if (_.includes(invoiceNumber, '?')) invoiceNumber += ' ILLEGAL';
-
+    //
+    // On every 4th line, transform the collected ASCII digits
+    // to an actual number and add it to the array of invoice numbers
+    // that will eventually be written to the output file
+    //
+    let invoiceNumber = AsciiUtils.flattenedDigitsToNumber(asciiDigits);
+    if (_.includes(invoiceNumber, '?')) invoiceNumber += ' ILLEGAL';    // User Story 2
     invoiceNumbers.push(invoiceNumber);
-    invoiceAsciiDigits = createArrays(9);
+
+    // Reset array for next 3 lines
+    asciiDigits = createArrays(9);
   }
   i++;
 };
+
 
 let writeOutputFile = () => {
   fs.writeFileSync(outputFilePath, invoiceNumbers.join('\n') + '\n');
 };
 
+
+//
+// Read file, parse lines, write output
+//
 eachLine(inputFilePath, processAsciiArtLine)
   .then(writeOutputFile)
   .catch((err) => {
